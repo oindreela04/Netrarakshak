@@ -1,0 +1,19 @@
+# Streamlit Community Cloud (entry point: streamlit_app.py). The full web platform uses backend/requirements.txt.
+streamlit>=1.40
+fastapi>=0.115,<1.0
+httpx>=0.27
+pydantic>=2.7
+pydantic-settings>=2.3
+email-validator>=2.1
+sqlalchemy>=2.0.30
+pyjwt>=2.8
+bcrypt>=4.1
+python-multipart>=0.0.9
+cryptography>=42.0
+pillow>=10.3
+opencv-python-headless>=4.9
+numpy>=1.26
+pandas>=2.2
+reportlab>=4.1
+torch>=2.3
+torchvision>=0.18
