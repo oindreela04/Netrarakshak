@@ -1,0 +1,297 @@
+{
+  "module": "diabetic_retinopathy",
+  "model_name": "NR-DR-efficientnet_b0",
+  "version": "2026.11.11-1219",
+  "created_at": "2026-11-11T12:29:53.762685+00:00",
+  "architecture": "efficientnet_b0",
+  "input_size": 384,
+  "preprocessing": "crop-to-retina, pad-square, resize, Ben Graham local-average subtraction, ImageNet normalisation",
+  "class_keys": [
+    "no_dr",
+    "mild_npdr",
+    "moderate_npdr",
+    "severe_npdr",
+    "proliferative_dr"
+  ],
+  "class_names": [
+    "No apparent DR",
+    "Mild NPDR",
+    "Moderate NPDR",
+    "Severe NPDR",
+    "Proliferative DR"
+  ],
+  "referable_from": 2,
+  "temperature": 0.7712768316268921,
+  "training_data": {
+    "name": "APTOS 2019 Blindness Detection (Kaggle)",
+    "licence": "Kaggle competition rules accepted by the account holder; commercial use NOT confirmed",
+    "synthetic": false,
+    "label_format": "aptos",
+    "n_images": 3662,
+    "split_sizes": {
+      "train": 2615,
+      "val": 523,
+      "test": 524
+    },
+    "grade_counts": {
+      "train": [
+        1281,
+        281,
+        710,
+        134,
+        209
+      ],
+      "val": [
+        251,
+        43,
+        156,
+        34,
+        39
+      ],
+      "test": [
+        273,
+        46,
+        133,
+        25,
+        47
+      ]
+    },
+    "split_method": "stratified, patient-grouped (StratifiedGroupKFold)"
+  },
+  "training": {
+    "epochs_run": 14,
+    "best_epoch": 8,
+    "best_val_qwk": 0.886700807481215,
+    "imbalance": "weighted_loss",
+    "lr": 0.0003,
+    "batch_size": 24,
+    "pretrained_imagenet": true,
+    "device": "cuda",
+    "torch": "2.11.0+cu130",
+    "python": "3.13.16",
+    "history": [
+      {
+        "epoch": 1,
+        "train_loss": 1.6261510407483135,
+        "val_qwk": 0.7423594746253701,
+        "val_accuracy": 0.6347992351816444,
+        "seconds": 244.4
+      },
+      {
+        "epoch": 2,
+        "train_loss": 1.2955014043384128,
+        "val_qwk": 0.7879038649580568,
+        "val_accuracy": 0.6042065009560229,
+        "seconds": 23.7
+      },
+      {
+        "epoch": 3,
+        "train_loss": 1.129872237642606,
+        "val_qwk": 0.8726852566146546,
+        "val_accuracy": 0.7743785850860421,
+        "seconds": 23.5
+      },
+      {
+        "epoch": 4,
+        "train_loss": 1.0451343241665099,
+        "val_qwk": 0.8684380622564143,
+        "val_accuracy": 0.7839388145315488,
+        "seconds": 23.3
+      },
+      {
+        "epoch": 5,
+        "train_loss": 0.9975045632433008,
+        "val_qwk": 0.8558342698416064,
+        "val_accuracy": 0.7131931166347992,
+        "seconds": 23.2
+      },
+      {
+        "epoch": 6,
+        "train_loss": 0.9500088454396637,
+        "val_qwk": 0.8543957215889573,
+        "val_accuracy": 0.7036328871892925,
+        "seconds": 24.2
+      },
+      {
+        "epoch": 7,
+        "train_loss": 0.9103079863168575,
+        "val_qwk": 0.8738759160876937,
+        "val_accuracy": 0.7762906309751434,
+        "seconds": 23.9
+      },
+      {
+        "epoch": 8,
+        "train_loss": 0.8759833447359227,
+        "val_qwk": 0.886700807481215,
+        "val_accuracy": 0.7877629063097514,
+        "seconds": 23.8
+      },
+      {
+        "epoch": 9,
+        "train_loss": 0.8356340770368222,
+        "val_qwk": 0.8383391776050978,
+        "val_accuracy": 0.7284894837476099,
+        "seconds": 24.5
+      },
+      {
+        "epoch": 10,
+        "train_loss": 0.7741360658848727,
+        "val_qwk": 0.8543984866886223,
+        "val_accuracy": 0.7667304015296367,
+        "seconds": 24.2
+      },
+      {
+        "epoch": 11,
+        "train_loss": 0.7658546804277985,
+        "val_qwk": 0.8809395212226989,
+        "val_accuracy": 0.7858508604206501,
+        "seconds": 24.0
+      },
+      {
+        "epoch": 12,
+        "train_loss": 0.6978266211571517,
+        "val_qwk": 0.8750754225075479,
+        "val_accuracy": 0.7877629063097514,
+        "seconds": 24.1
+      },
+      {
+        "epoch": 13,
+        "train_loss": 0.6626261756927879,
+        "val_qwk": 0.879421393635195,
+        "val_accuracy": 0.8049713193116634,
+        "seconds": 24.2
+      },
+      {
+        "epoch": 14,
+        "train_loss": 0.6441146999045655,
+        "val_qwk": 0.880600491185186,
+        "val_accuracy": 0.8030592734225621,
+        "seconds": 24.4
+      }
+    ]
+  },
+  "evaluation": {
+    "split": "held-out test (never used for training, model selection or calibration)",
+    "test_metrics": {
+      "n": 524,
+      "accuracy": 0.8187022900763359,
+      "macro_precision": 0.6799335047083825,
+      "macro_recall": 0.6784853038452532,
+      "macro_f1": 0.6695359402197415,
+      "weighted_f1": 0.8211761652088556,
+      "quadratic_weighted_kappa": 0.8763532763532763,
+      "roc_auc_macro_ovr": 0.916597209064127,
+      "confusion_matrix": [
+        [
+          271,
+          1,
+          0,
+          0,
+          1
+        ],
+        [
+          3,
+          33,
+          9,
+          0,
+          1
+        ],
+        [
+          4,
+          26,
+          86,
+          15,
+          2
+        ],
+        [
+          0,
+          0,
+          12,
+          11,
+          2
+        ],
+        [
+          1,
+          6,
+          6,
+          6,
+          28
+        ]
+      ],
+      "class_names": [
+        "No apparent DR",
+        "Mild NPDR",
+        "Moderate NPDR",
+        "Severe NPDR",
+        "Proliferative DR"
+      ],
+      "per_class": {
+        "No apparent DR": {
+          "precision": 0.9713261648745519,
+          "recall_sensitivity": 0.9926739926739927,
+          "f1": 0.9818840579710145,
+          "specificity": 0.9681274900398407,
+          "support": 273,
+          "roc_auc_ovr": 0.99800796812749
+        },
+        "Mild NPDR": {
+          "precision": 0.5,
+          "recall_sensitivity": 0.717391304347826,
+          "f1": 0.5892857142857143,
+          "specificity": 0.9309623430962343,
+          "support": 46,
+          "roc_auc_ovr": 0.9348508277242134
+        },
+        "Moderate NPDR": {
+          "precision": 0.7610619469026548,
+          "recall_sensitivity": 0.6466165413533834,
+          "f1": 0.6991869918699187,
+          "specificity": 0.9309462915601023,
+          "support": 133,
+          "roc_auc_ovr": 0.9455127588792953
+        },
+        "Severe NPDR": {
+          "precision": 0.34375,
+          "recall_sensitivity": 0.44,
+          "f1": 0.38596491228070173,
+          "specificity": 0.9579158316633266,
+          "support": 25,
+          "roc_auc_ovr": 0.8096593186372746
+        },
+        "Proliferative DR": {
+          "precision": 0.8235294117647058,
+          "recall_sensitivity": 0.5957446808510638,
+          "f1": 0.691358024691358,
+          "specificity": 0.9874213836477987,
+          "support": 47,
+          "roc_auc_ovr": 0.8949551719523618
+        }
+      },
+      "referable": {
+        "definition": "class index >= 2 (Moderate NPDR or worse)",
+        "sensitivity": 0.8195121951219512,
+        "specificity": 0.9655172413793104,
+        "ppv": 0.9385474860335196,
+        "npv": 0.8927536231884058,
+        "roc_auc": 0.9810688890587965,
+        "confusion": {
+          "tp": 168,
+          "fn": 37,
+          "tn": 308,
+          "fp": 11
+        }
+      },
+      "ece_before_calibration": 0.12246138864118636,
+      "ece_after_calibration": 0.06054688262120458
+    }
+  },
+  "clinical_use_status": "NOT CLINICALLY VALIDATED \u2014 research/investigational use under clinician supervision only",
+  "intended_use": "Assist trained clinicians in screening colour fundus photographs for signs of diabetic retinopathy. Not for autonomous diagnosis.",
+  "limitations": [
+    "Performance has only been measured on the dataset split above; it may differ on other cameras, populations and image protocols.",
+    "Does not detect diseases other than diabetic retinopathy (e.g. glaucoma, AMD, retinal detachment, tumours).",
+    "Does not assess diabetic macular oedema separately.",
+    "Requires prospective clinical validation in the target Indian population before any clinical claim."
+  ],
+  "weights_sha256": "d25443af7bcc7331b23c11f7da832c9fc8a9cdf5c6cbd0100b34205684eaad9b"
+}
