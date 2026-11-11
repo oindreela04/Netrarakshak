@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body { @apply bg-white text-ink font-sans; font-feature-settings: "tnum" 0; }
+  .tabular { font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid #1F6FB2; outline-offset: 2px; }
+  h1, h2, h3 { letter-spacing: -0.012em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+@keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.retina-sweep { transform-origin: 200px 200px; animation: sweep 9s linear infinite; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .5s ease-out both; }
+
+/* ---------- marketing motion ---------- */
+.reveal { opacity: 0; transform: perspective(1000px) translateY(28px) rotateX(8deg); transform-origin: 50% 100%;
+  transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); }
+.reveal-in { opacity: 1; transform: none; }
+.tilt { transition: transform .25s ease-out; transform-style: preserve-3d; will-change: transform;
+  background-image: radial-gradient(420px circle at var(--gx, 50%) var(--gy, 0%), rgba(47,134,214,.08), transparent 60%); }
+@keyframes echoMain { from { opacity: 0; transform: translateY(14px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes echoGhost { 0% { opacity: .5; transform: translateY(-10px); filter: blur(1px); } 100% { opacity: 0; transform: translateY(-46px); filter: blur(4px); } }
+.echo-main { animation: echoMain .9s cubic-bezier(.2,.7,.2,1) both; }
+.echo-1 { animation: echoGhost .9s ease-out both; color: rgba(31,111,178,.35); }
+.echo-2 { animation: echoGhost 1.2s .08s ease-out both; color: rgba(31,111,178,.18); }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; }
+  .echo-1, .echo-2 { display: none; }
+}
