@@ -1,0 +1,17 @@
+# secrets
+.env
+.env.local
+backend/data/
+backend/ai/runs/
+backend/ai/model_registry/*/runs/
+backups/
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# node
+frontend/node_modules/
+frontend/.next/
+*.tsbuildinfo
+frontend/.vercel

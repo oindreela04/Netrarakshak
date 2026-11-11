@@ -1,0 +1,45 @@
+# Render Blueprint for the NetraRakshak API + AI inference + PostgreSQL.
+# Render dashboard → New → Blueprint → select this GitHub repository.
+services:
+  - type: web
+    name: netrarakshak-api
+    runtime: python
+    rootDir: backend
+    plan: standard          # >= 2 GB RAM recommended for PyTorch inference
+    buildCommand: pip install -r requirements-deploy.txt
+    startCommand: python scripts/seed.py && gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w 1 -b 0.0.0.0:$PORT --timeout 120
+    healthCheckPath: /api/health
+    disk:
+      name: netrarakshak-data
+      mountPath: /var/data
+      sizeGB: 5
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: netrarakshak-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: STORAGE_BACKEND
+        value: local
+      - key: LOCAL_STORAGE_DIR
+        value: /var/data/storage
+      - key: STORAGE_ENCRYPTION_KEY
+        sync: false        # paste a Fernet key (see docs/DEPLOY.md)
+      - key: CORS_ORIGINS
+        sync: false        # your Vercel URL, e.g. https://netrarakshak.vercel.app
+      - key: SEED_DEMO
+        value: "true"      # demo hospitals with SYNTHETIC patients; set to false for real customers
+      - key: SEED_PASSWORD
+        sync: false        # private password for the demo accounts
+      - key: ALLOW_NONCLINICAL_TEST_MODELS
+        value: "false"
+
+databases:
+  - name: netrarakshak-db
+    databaseName: netrarakshak
+    user: netrarakshak
