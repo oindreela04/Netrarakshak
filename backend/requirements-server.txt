@@ -1,0 +1,22 @@
+# Slim runtime set for small hosts (Render free, 512 MB RAM).
+# CPU-only PyTorch wheels; no training/test/plotting libraries (scikit-learn, matplotlib, pandas, pytest).
+# boto3 is only needed when STORAGE_BACKEND=s3.
+--extra-index-url https://download.pytorch.org/whl/cpu
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30
+gunicorn>=22.0
+pydantic>=2.7
+pydantic-settings>=2.3
+email-validator>=2.1
+sqlalchemy>=2.0.30
+psycopg2-binary>=2.9.9
+pyjwt>=2.8
+bcrypt>=4.1
+python-multipart>=0.0.9
+cryptography>=42.0
+pillow>=10.3
+opencv-python-headless>=4.9
+numpy>=1.26
+reportlab>=4.1
+torch==2.5.1+cpu
+torchvision==0.20.1+cpu
