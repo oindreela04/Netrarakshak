@@ -14,6 +14,7 @@ os.environ.update({
     "JWT_SECRET": "test-secret-0123456789-0123456789-abcdef",
     "ENVIRONMENT": "test",
     "ALLOW_NONCLINICAL_TEST_MODELS": "false",
+    "DEMO_CASES_ENABLED": "false",
 })
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 

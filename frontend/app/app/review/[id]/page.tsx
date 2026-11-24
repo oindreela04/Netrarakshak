@@ -15,7 +15,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Check, Field, Input, Select, Textarea } from "@/components/ui/input";
 import { ErrorNote, Loading, PageHeader, StatusBadge, SyntheticTag } from "@/components/app/bits";
 import { RetinalViewer } from "@/components/app/retinal-viewer";
-import { AIResultCard, KEYS } from "@/components/app/screening-parts";
+import { AIResultCard, KEYS, MultiDiseaseCard } from "@/components/app/screening-parts";
 
 type Eye = { ai_decision: string; final_grade: string; macular_oedema_suspected: boolean | null; other_findings: string; observations: string };
 const blankEye: Eye = { ai_decision: "not_applicable", final_grade: "not_assessed", macular_oedema_suspected: null, other_findings: "", observations: "" };
@@ -46,6 +46,7 @@ export default function ReviewWorkspace() {
   if (error) return <ErrorNote message={error} />;
   if (!s) return null;
   const ai = (e: string) => s.ai_results.find((r: any) => r.eye === e);
+  const md = (e: string) => (s.multi_disease_results || []).find((r: any) => r.eye === e);
   const img = (e: string) => s.images.find((i: any) => i.eye === e);
   const locked = ["signed", "reported"].includes(s.status);
   const p = patient.data;
@@ -107,6 +108,14 @@ export default function ReviewWorkspace() {
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
               <AIResultCard eye="right" r={ai("right")} /><AIResultCard eye="left" r={ai("left")} />
             </div>
+            {(md("right") || md("left")) && (
+              <>
+                <p className="mb-2 mt-4 text-[13px] font-semibold text-navy">Multi-disease screening flags <span className="font-normal text-slate">— record any confirmed finding under "Other findings"</span></p>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                  <MultiDiseaseCard eye="right" r={md("right")} /><MultiDiseaseCard eye="left" r={md("left")} />
+                </div>
+              </>
+            )}
           </div>
           {(["right", "left"] as const).filter((e) => img(e)).map((e) => {
             const r = ai(e), has = r?.status === "completed", v = eyes[e];

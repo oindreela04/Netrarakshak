@@ -39,6 +39,8 @@ def dashboard(days: int = 90, cu: CurrentUser = Depends(require("screenings.read
 
     # AI status + grade distribution (completed and certain only) — from real stored results
     ai_rows = db.execute(select(AIResult).where(AIResult.hospital_id == hid, AIResult.created_at >= since)).scalars().all()
+    md_rows = [r for r in ai_rows if r.module == "multi_disease"]
+    ai_rows = [r for r in ai_rows if r.module != "multi_disease"]
     ai_status = Counter(r.status for r in ai_rows)
     ai_grades = Counter(r.predicted_label for r in ai_rows if r.status == "completed" and not r.is_uncertain)
     uncertain = sum(1 for r in ai_rows if r.status == "completed" and r.is_uncertain)
@@ -74,4 +76,6 @@ def dashboard(days: int = 90, cu: CurrentUser = Depends(require("screenings.read
         "status_counts": dict(status_counts), "daily": series, "image_quality": dict(q),
         "ai_status": dict(ai_status), "ai_grades": dict(ai_grades), "ai_uncertain": uncertain,
         "clinician_grades": dict(final), "ai_decisions": dict(decisions),
+        "multi_disease_flags": dict(Counter(k for r in md_rows if r.status == "completed"
+                                            for k in (r.probabilities or {}).get("_flagged", []))),
     }

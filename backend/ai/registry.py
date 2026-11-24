@@ -37,6 +37,14 @@ MODULES: dict[str, ModuleSpec] = {
         True, "Colour fundus photographs with ICDR grades from qualified graders; patient IDs for grouped splitting.",
         ["APTOS 2019 (Kaggle, competition terms)", "EyePACS / Kaggle DR 2015 (competition terms)", "IDRiD (CC BY 4.0)",
          "Messidor-2 (licence on request)", "DDR (research use)", "Indian clinical data under DPDP-compliant agreements"]),
+    "multi_disease": ModuleSpec(
+        "multi_disease", "Multi-disease screening (8 categories)",
+        "Multi-label screening flags per eye: normal fundus, diabetic retinopathy, glaucoma suspect, cataract / media opacity, "
+        "age-related macular degeneration, hypertensive retinopathy, pathological myopia and other abnormality.",
+        True, "Fundus photographs with per-eye diagnostic keywords from ophthalmologists, grouped by patient for splitting.",
+        ["ODIR-5K (Peking University, research terms)", "RFMiD (CC BY 4.0, Indian multi-disease)"],
+        "Screening flags only. Glaucoma needs IOP, OCT and visual fields to confirm; AMD activity needs OCT; "
+        "hypertensive retinopathy does not diagnose hypertension."),
     "glaucoma": ModuleSpec(
         "glaucoma", "Glaucoma suspect screening",
         "Optic-disc / cup assessment (vertical cup-to-disc ratio, rim) to flag glaucoma suspects for comprehensive examination.",
@@ -139,6 +147,9 @@ def get_predictor(key: str):
             if key == "diabetic_retinopathy":
                 from ai.modules.diabetic_retinopathy.infer import DRPredictor
                 _cache[cache_key] = DRPredictor(module_dir(key) / info["version"])
+            elif key == "multi_disease":
+                from ai.modules.multi_disease.infer import MultiDiseasePredictor
+                _cache[cache_key] = MultiDiseasePredictor(module_dir(key) / info["version"])
             else:  # pragma: no cover - no other module implemented
                 raise ModelUnavailable("No inference adapter")
         return _cache[cache_key]

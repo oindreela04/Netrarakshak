@@ -13,6 +13,7 @@ from .quality import decode_image
 
 settings = get_settings()
 MODULE = "diabetic_retinopathy"
+MD_MODULE = "multi_disease"
 
 
 def _png(rgb) -> bytes:
@@ -63,5 +64,39 @@ def run_screening_analysis(db: Session, s: Screening) -> list[AIResult]:
         if r not in db:
             db.add(r)
         results.append(r)
+    results += run_multi_disease(db, s, consent_ok)
     db.flush()
     return results
+
+
+def run_multi_disease(db: Session, s: Screening, consent_ok: bool) -> list[AIResult]:
+    """Optional second model: multi-label screening flags. Runs only when a trained model is registered and only on
+    images that passed the quality check with AI consent on record; otherwise it adds nothing."""
+    if not consent_ok or not registry.availability(MD_MODULE)["available"]:
+        return []
+    store = get_storage()
+    predictor = registry.get_predictor(MD_MODULE)
+    out_rows = []
+    for img in [i for i in s.images if i.is_current and i.quality_verdict == "acceptable"]:
+        base = dict(screening_id=s.id, hospital_id=s.hospital_id, image_id=img.id, eye=img.eye, module=MD_MODULE)
+        try:
+            out = predictor.predict(decode_image(store.get(img.storage_key)))
+        except Exception as e:
+            r = AIResult(**base, status="error", display_verdict=INCONCLUSIVE,
+                         explanation=f"Multi-disease inference failed ({type(e).__name__}). Human review required.")
+            db.add(r)
+        else:
+            r = AIResult(**base, status="completed", model_name=out["model_name"], model_version=out["model_version"],
+                         predicted_label=out["predicted_label"], predicted_index=out["predicted_index"],
+                         probabilities={**out["probabilities"], "_flagged": out["flagged"], "_thresholds": out["thresholds"]},
+                         confidence=out["confidence"], is_uncertain=out["is_uncertain"],
+                         display_verdict=out["display_verdict"], explanation=out["explanation"],
+                         inference_ms=out["inference_ms"])
+            db.add(r)
+            db.flush()
+            key = f"hospitals/{s.hospital_id}/screenings/{s.id}/ai/{r.id}_overlay.png"
+            store.put(key, _png(out["overlay_rgb"]))
+            store.put(key.replace("overlay", "heatmap"), _png(out["heatmap_rgb"]))
+            r.gradcam_key = key
+        out_rows.append(r)
+    return out_rows

@@ -238,6 +238,28 @@ def build_report(screening: Screening, hospital: Hospital, report_number: str, g
     ta.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), SOFT), ("BOX", (0, 0), (-1, -1), 0.5, LINE),
                             ("INNERGRID", (0, 0), (-1, -1), 0.3, LINE), ("VALIGN", (0, 0), (-1, -1), "TOP")]))
     story.append(ta)
+
+    md = {r.eye: r for r in latest_ai(screening, "multi_disease")}
+    if md:
+        story.append(_p("Multi-disease screening flags (unmodified model output)", "h2"))
+        rows_md = [[_p("<b>Eye</b>"), _p("<b>Result</b>"), _p("<b>Category probabilities (threshold)</b>")]]
+        for eye in ("right", "left"):
+            r = md.get(eye)
+            if not r:
+                continue
+            probs = {k: v for k, v in (r.probabilities or {}).items() if not k.startswith("_")}
+            thr = (r.probabilities or {}).get("_thresholds", {})
+            flagged = set((r.probabilities or {}).get("_flagged", []))
+            parts = []
+            for k, v in sorted(probs.items(), key=lambda kv: -kv[1]):
+                txt = f"{k.replace('_', ' ')} {v:.0%} ({thr.get(k, 0):.0%})"
+                parts.append(f"<b>{txt}</b>" if k in flagged else txt)
+            rows_md.append([_p(eye.capitalize()), _p(f"<b>{_esc(r.display_verdict)}</b>"), _p("<font size=7>" + " · ".join(parts) + "</font>")])
+        tm = Table(rows_md, colWidths=[cw * 0.1, cw * 0.38, cw * 0.52], repeatRows=1)
+        tm.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), SOFT), ("BOX", (0, 0), (-1, -1), 0.5, LINE),
+                                ("INNERGRID", (0, 0), (-1, -1), 0.3, LINE), ("VALIGN", (0, 0), (-1, -1), "TOP")]))
+        story += [tm, _p("Screening flags from a model trained on ODIR-5K; not diagnoses and not clinically validated. "
+                         "Bold categories reached their validated decision threshold.", "small")]
     story.append(_p("AI outputs are produced by a model that has not been clinically validated. Confidence values are "
                     "temperature-calibrated model probabilities, not the probability of disease. Uncertain or unsupported "
                     "cases are reported as INCONCLUSIVE — HUMAN REVIEW REQUIRED.", "small"))
@@ -321,7 +343,8 @@ def build_report(screening: Screening, hospital: Hospital, report_number: str, g
         story.append(_p(f"<font color='#B42318'>{msg}</font>"))
 
     story += [Spacer(1, 8), _p(f"Report ID {report_number} · Screening {screening.screening_code} · Generated {_ist(now)} · "
-                               f"AI module: diabetic retinopathy only (other disease modules not active). This report does not "
-                               f"exclude other ocular conditions.", "small")]
+                               + ("AI modules: diabetic retinopathy grading and multi-disease screening flags. " if md else
+                                "AI module: diabetic retinopathy only (other disease modules not active). ")
+                               + "This report does not exclude other ocular conditions.", "small")]
     doc.build(story)
     return buf.getvalue(), status

@@ -100,12 +100,12 @@ def report_out(r: Report) -> dict:
             "generated_by": r.generated_by}
 
 
-def latest_ai(s: Screening) -> list[AIResult]:
-    """Most recent AI result per eye for the current images."""
+def latest_ai(s: Screening, module: str = "diabetic_retinopathy") -> list[AIResult]:
+    """Most recent AI result per eye for the current images, for one module (DR by default)."""
     current = {i.id for i in s.images if i.is_current}
     by_eye: dict[str, AIResult] = {}
     for r in s.ai_results:
-        if r.image_id in current:
+        if r.image_id in current and (r.module or "diabetic_retinopathy") == module:
             by_eye[r.eye] = r
     return [by_eye[e] for e in ("right", "left") if e in by_eye]
 
@@ -128,6 +128,7 @@ def screening_detail(s: Screening) -> dict:
              images=[image_out(i) for i in s.images if i.is_current],
              replaced_images=[image_out(i) for i in s.images if not i.is_current],
              ai_results=[ai_out(r) for r in latest_ai(s)],
+             multi_disease_results=[ai_out(r) for r in latest_ai(s, "multi_disease")],
              ai_history=[ai_out(r) for r in s.ai_results],
              reviews=[review_out(r) for r in s.reviews],
              reports=[report_out(r) for r in s.reports])

@@ -15,7 +15,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Table, Td, Th } from "@/components/ui/table";
 import { ErrorNote, Loading, PageHeader, QualityBadge, StatusBadge, SyntheticTag } from "@/components/app/bits";
 import { RetinalViewer } from "@/components/app/retinal-viewer";
-import { AIResultCard, EyeDrop, QualityChecks } from "@/components/app/screening-parts";
+import { MultiDiseaseCard, AIResultCard, EyeDrop, QualityChecks } from "@/components/app/screening-parts";
 
 const STEPS = ["Images", "Quality", "AI analysis", "Clinician review", "Report"];
 
@@ -34,6 +34,7 @@ export default function ScreeningDetail() {
 
   const img = (eye: string) => s.images.find((i: any) => i.eye === eye);
   const ai = (eye: string) => s.ai_results.find((r: any) => r.eye === eye);
+  const md = (eye: string) => (s.multi_disease_results || []).find((r: any) => r.eye === eye);
   const locked = ["signed", "reported"].includes(s.status);
   const signed = [...s.reviews].reverse().find((r: any) => r.status === "signed");
   const dr = modules.data?.find((m) => m.key === "diabetic_retinopathy");
@@ -120,9 +121,20 @@ export default function ScreeningDetail() {
               {!s.patient_consents?.ai_analysis && <p className="rounded-md bg-mist px-3 py-2 text-xs text-slate">Patient has not consented to AI analysis; no AI processing will run.</p>}
               <AIResultCard eye="right" r={ai("right")} />
               <AIResultCard eye="left" r={ai("left")} />
-              <p className="text-[11px] leading-4 text-slate">Images that fail the quality check are never analysed. Only diabetic retinopathy is assessed; other conditions are not excluded.</p>
+              <p className="text-[11px] leading-4 text-slate">Images that fail the quality check are never analysed.{md("right") || md("left") ? " Other conditions are screened by the multi-disease model below." : " Only diabetic retinopathy is assessed; other conditions are not excluded."}</p>
             </CardBody>
           </Card>
+
+          {(md("right") || md("left")) && (
+            <Card>
+              <CardHeader title="Multi-disease screening" description="Glaucoma, cataract, AMD, hypertensive retinopathy, myopia and more" />
+              <CardBody className="space-y-3">
+                <MultiDiseaseCard eye="right" r={md("right")} />
+                <MultiDiseaseCard eye="left" r={md("left")} />
+                <p className="text-[11px] leading-4 text-slate">Screening flags from a model trained on ODIR-5K. Not diagnoses and not clinically validated; a clinician decides.</p>
+              </CardBody>
+            </Card>
+          )}
 
           {s.images.length > 0 && (
             <Card>

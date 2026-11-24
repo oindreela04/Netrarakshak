@@ -128,3 +128,48 @@ export function AIResultCard({ r, eye }: { r?: any; eye: "right" | "left" }) {
     </div>
   );
 }
+
+const MD_LABEL: Record<string, string> = {
+  normal: "Normal fundus", diabetic_retinopathy: "Diabetic retinopathy", glaucoma: "Glaucoma (suspect)", cataract: "Cataract / opacity",
+  amd: "AMD", hypertensive_retinopathy: "Hypertensive retinopathy", pathological_myopia: "Pathological myopia", other: "Other abnormality",
+};
+
+/** Multi-disease screening flags for one eye (multi-label: each category has its own probability and threshold). */
+export function MultiDiseaseCard({ r, eye }: { r?: any; eye: "right" | "left" }) {
+  if (!r) return null;
+  const label = eye === "right" ? "Right eye (OD)" : "Left eye (OS)";
+  const probs = Object.entries(r.probabilities || {}).filter(([k]) => !k.startsWith("_")) as [string, number][];
+  const thr: Record<string, number> = r.probabilities?._thresholds || {};
+  const flagged: string[] = r.probabilities?._flagged || [];
+  const abnormal = flagged.some((k) => k !== "normal");
+  return (
+    <div className={cn("rounded-lg border bg-white", abnormal ? "border-[#F4CFCB]" : "border-line")}>
+      <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
+        <p className="text-sm font-semibold text-navy">{label}</p>
+        {r.status === "completed" ? <Badge tone="blue">Model v{r.model_version}</Badge> : <Badge tone="warn">{STATUS_COPY[r.status] ?? r.status}</Badge>}
+      </div>
+      <div className="p-4">
+        <p className={cn("text-[15px] font-semibold", abnormal ? "text-danger" : "text-navy")}>{r.display_verdict}</p>
+        <p className="mt-1 text-xs leading-5 text-slate">{r.explanation}</p>
+        {r.status === "completed" && (
+          <div className="mt-4 space-y-1.5">
+            {probs.sort((a, b) => b[1] - a[1]).map(([k, v]) => {
+              const on = flagged.includes(k);
+              return (
+                <div key={k} className="grid grid-cols-[150px_1fr_48px] items-center gap-2 text-xs">
+                  <span className={on ? "font-semibold text-navy" : "text-slate"}>{MD_LABEL[k] ?? k}</span>
+                  <div className="relative h-2 rounded-full bg-mist">
+                    <div className={cn("h-full rounded-full", on ? (k === "normal" ? "bg-teal" : "bg-danger") : "bg-navy/25")} style={{ width: `${v * 100}%` }} />
+                    {thr[k] != null && <div className="absolute -top-0.5 h-3 w-px bg-navy/60" style={{ left: `${thr[k] * 100}%` }} title={`threshold ${pct(thr[k])}`} />}
+                  </div>
+                  <span className="tabular text-right text-slate">{pct(v)}</span>
+                </div>
+              );
+            })}
+            <p className="pt-2 text-[11px] text-slate">Tick = the category's decision threshold. {r.inference_ms} ms · {r.model_name}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

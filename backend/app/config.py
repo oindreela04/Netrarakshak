@@ -47,6 +47,7 @@ class Settings(BaseSettings):
 
     # One-click sign-in to the seeded demo accounts (synthetic data only). Never allowed in production.
     demo_login_enabled: bool = True
+    demo_cases_enabled: bool = True  # pre-analysed synthetic cases in the demo tenant (never in production)
 
     # CORS
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"

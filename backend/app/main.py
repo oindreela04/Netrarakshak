@@ -14,6 +14,8 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     init_db()
+    from .services.demo_cases import start_in_background
+    start_in_background()
     yield
 
 
