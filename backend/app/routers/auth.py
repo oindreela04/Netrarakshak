@@ -83,6 +83,58 @@ def login(body: LoginIn, request: Request, db: Session = Depends(get_db)):
     return tokens
 
 
+DEMO_ACCOUNTS = [
+    {"role": "technician", "email": "tech@aarogya.example", "label": "Screening technician",
+     "description": "Register patients, upload eye photographs and run the AI"},
+    {"role": "ophthalmologist", "email": "doctor@aarogya.example", "label": "Ophthalmologist",
+     "description": "Review the AI result and Grad-CAM, then sign the report"},
+    {"role": "hospital_admin", "email": "admin@aarogya.example", "label": "Hospital administrator",
+     "description": "Team, branding, analytics and audit log"},
+    {"role": "receptionist", "email": "reception@aarogya.example", "label": "Receptionist",
+     "description": "Register patients and record consent"},
+]
+
+
+def _demo_allowed() -> bool:
+    return settings.demo_login_enabled and settings.environment != "production"
+
+
+class DemoLoginIn(BaseModel):
+    role: str
+
+
+@router.get("/demo-accounts")
+def demo_accounts(db: Session = Depends(get_db)):
+    """Roles available for one-click demo sign-in (empty when demo sign-in is off)."""
+    if not _demo_allowed():
+        return {"enabled": False, "accounts": []}
+    emails = {a["email"] for a in DEMO_ACCOUNTS}
+    present = set(db.execute(select(User.email).where(User.email.in_(emails), User.is_active.is_(True))).scalars())
+    accounts = [{k: a[k] for k in ("role", "label", "description")} for a in DEMO_ACCOUNTS if a["email"] in present]
+    return {"enabled": bool(accounts), "accounts": accounts}
+
+
+@router.post("/demo-login")
+def demo_login(body: DemoLoginIn, request: Request, db: Session = Depends(get_db)):
+    """Sign in to a seeded demo account without a password. Only demo-tenant accounts; never in production."""
+    if not _demo_allowed():
+        raise HTTPException(404, "Not found")
+    acct = next((a for a in DEMO_ACCOUNTS if a["role"] == body.role), None)
+    if not acct:
+        raise HTTPException(400, "Unknown demo role")
+    user = db.execute(select(User).where(User.email == acct["email"])).scalar_one_or_none()
+    if not user or not user.is_active:
+        raise HTTPException(404, "Demo account not available")
+    if user.hospital_id:
+        h = db.get(Hospital, user.hospital_id)
+        if not h or not h.is_active:
+            raise HTTPException(403, "Hospital account is inactive")
+    user.last_login_at = datetime.now(timezone.utc)
+    tokens = _issue(db, user, request)
+    audit.record(db, "auth.demo_login", user=user, ip=client_ip(request), details={"role": body.role})
+    return tokens
+
+
 @router.post("/refresh")
 def refresh(body: RefreshIn, request: Request, db: Session = Depends(get_db)):
     try:

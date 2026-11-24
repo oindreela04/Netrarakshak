@@ -18,6 +18,12 @@ export function EyeDrop({ eye, image, screeningId, disabled, onFile, busy }: {
   const [over, setOver] = useState(false);
   const label = eye === "right" ? "Right eye (OD)" : "Left eye (OS)";
   const pick = (files: FileList | null) => { const f = files?.[0]; if (f) onFile(f); };
+  // Synthetic sample images shipped with the site, for demos without a fundus camera.
+  const loadSample = async (blurred: boolean) => {
+    const name = `SYNTHETIC_${blurred ? "blurred" : eye === "right" ? "right" : "left"}_${eye === "right" ? "OD" : "OS"}.jpg`;
+    const blob = await (await fetch(`/samples/${name}`)).blob();
+    onFile(new File([blob], name, { type: "image/jpeg" }));
+  };
   return (
     <div
       onDragOver={(e) => { e.preventDefault(); if (!disabled) setOver(true); }}
@@ -41,11 +47,22 @@ export function EyeDrop({ eye, image, screeningId, disabled, onFile, busy }: {
           </div>
         </div>
       ) : (
-        <button type="button" disabled={disabled || busy} onClick={() => input.current?.click()} className="flex w-full flex-col items-center px-6 py-10 text-center disabled:opacity-50">
-          <ImageUp className="h-8 w-8 text-clinical" />
-          <p className="mt-3 text-sm font-medium text-navy">{busy ? "Uploading and checking quality…" : "Drop the fundus photograph here or choose a file"}</p>
-          <p className="mt-1 text-xs text-slate">JPEG, PNG or TIFF from a retinal fundus camera · up to 40 MB</p>
-        </button>
+        <div>
+          <button type="button" disabled={disabled || busy} onClick={() => input.current?.click()} className="flex w-full flex-col items-center px-6 pb-4 pt-8 text-center disabled:opacity-50">
+            <ImageUp className="h-8 w-8 text-clinical" />
+            <p className="mt-3 text-sm font-medium text-navy">{busy ? "Uploading and checking quality…" : "Drop the fundus photograph here or choose a file"}</p>
+            <p className="mt-1 text-xs text-slate">JPEG, PNG or TIFF from a retinal fundus camera · up to 40 MB</p>
+          </button>
+          {!disabled && !busy && (
+            <p className="px-4 pb-5 text-center text-xs text-slate">
+              No photograph to hand?{" "}
+              <button type="button" onClick={() => loadSample(false)} className="font-semibold text-clinical hover:underline">Use a sample photograph</button>
+              {" "}or a{" "}
+              <button type="button" onClick={() => loadSample(true)} className="font-semibold text-clinical hover:underline">blurred one</button>
+              {" "}to see the quality check reject it. Samples are synthetic.
+            </p>
+          )}
+        </div>
       )}
       {busy && <div className="absolute inset-x-0 bottom-0 h-0.5 animate-pulse bg-clinical" />}
     </div>
