@@ -32,15 +32,30 @@ class DRPredictor:
         rgb = preprocess_bgr(bgr, self.size)
         x = to_tensor(rgb).unsqueeze(0)
         with self.lock:
-            with torch.no_grad():
-                logits = self.model(x)[0]
-            probs = torch.softmax(logits / self.T, 0).numpy()
-            idx = int(probs.argmax())
-            cam_tool = GradCAM(self.model, gradcam_layer(self.model, self.arch))
-            try:
-                cam = cam_tool(x, idx)
-            finally:
-                cam_tool.remove()
+            if self.arch.startswith("efficientnet"):
+                # EfficientNet ends in global average pooling + one linear layer, so the Grad-CAM channel weights
+                # equal the classifier weights for the predicted class (up to the constant 1/(H*W), removed by the
+                # max-normalisation). Computing the map this way needs no backward pass and no autograd graph,
+                # which keeps peak memory low enough for a 512 MB server; the map is identical to GradCAM's.
+                with torch.inference_mode():
+                    feats = self.model.features(x)
+                    logits = self.model.classifier(torch.flatten(self.model.avgpool(feats), 1))[0]
+                    probs = torch.softmax(logits / self.T, 0).numpy()
+                    idx = int(probs.argmax())
+                    w = self.model.classifier[-1].weight[idx]
+                    cam = torch.relu((w[:, None, None] * feats[0]).sum(0)).numpy().astype(np.float32)
+                if cam.max() > 0:
+                    cam = cam / cam.max()
+            else:
+                with torch.no_grad():
+                    logits = self.model(x)[0]
+                probs = torch.softmax(logits / self.T, 0).numpy()
+                idx = int(probs.argmax())
+                cam_tool = GradCAM(self.model, gradcam_layer(self.model, self.arch))
+                try:
+                    cam = cam_tool(x, idx)
+                finally:
+                    cam_tool.remove()
         conf = float(probs[idx])
         ent = float(-(probs * np.log(probs + 1e-12)).sum() / np.log(len(probs)))
         reasons = []
