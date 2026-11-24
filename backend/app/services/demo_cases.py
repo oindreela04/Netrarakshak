@@ -8,11 +8,14 @@ see analysed cases immediately, and can still run the full workflow themselves.
 Runs in a background thread after the API starts (never delays start-up). Off when ENVIRONMENT=production or
 DEMO_CASES_ENABLED=false. Only touches the demo hospital AEH, and only if it has no screenings yet.
 """
+import ctypes
+import gc
 import logging
 import threading
+import time
 from datetime import date, datetime
+from pathlib import Path
 
-import cv2
 from sqlalchemy import func, select
 
 from .. import audit
@@ -22,12 +25,12 @@ from ..models import ConsentRecord, Hospital, Patient, RetinalImage, Screening, 
 from ..storage import get_storage
 from .analysis import run_screening_analysis
 from .quality import assess_quality
-from .synthetic_fundus import make_synthetic_fundus
 
 log = logging.getLogger("netrarakshak.demo")
 
 # (first, last, dob, sex, diabetes, hypertension, history, right eye spec, left eye spec)
-# eye spec = (seed, lesions, blur)
+# eye spec = (seed, lesions, blur) used by make_synthetic_fundus to pre-generate backend/demo_data/*.jpg (1024 px)
+DEMO_DIR = Path(__file__).resolve().parents[2] / "demo_data"
 CASES = [
     ("Ramesh", "Iyer", date(1962, 4, 9), "male", True, True, "Type 2 diabetes for 14 years; on metformin and amlodipine.",
      (31, 20, 0.0), (52, 10, 0.0)),
@@ -44,10 +47,13 @@ CASES = [
 ]
 
 
-def _jpeg(img) -> bytes:
-    ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 93])
-    assert ok
-    return buf.tobytes()
+def _release_memory():
+    """Return freed memory to the OS between cases (the free host has 512 MB)."""
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        pass
 
 
 def create_demo_cases(hospital_code: str = "AEH", tech_email: str = "tech@aarogya.example") -> int:
@@ -77,7 +83,7 @@ def create_demo_cases(hospital_code: str = "AEH", tech_email: str = "tech@aarogy
             db.add(s)
             db.flush()
             for eye, (seed, lesions, blur) in (("right", right), ("left", left)):
-                data = _jpeg(make_synthetic_fundus(1200, seed=seed, lesions=lesions, blur=blur, eye=eye))
+                data = (DEMO_DIR / f"SYNTHETIC_{fn}_{eye}.jpg").read_bytes()
                 q = assess_quality(data, get_settings().min_image_side_px)
                 img = RetinalImage(screening_id=s.id, hospital_id=h.id, eye=eye, storage_key="pending",
                                    original_filename=f"SYNTHETIC_{fn}_{eye}.jpg", content_type="image/jpeg", file_size=len(data),
@@ -97,6 +103,8 @@ def create_demo_cases(hospital_code: str = "AEH", tech_email: str = "tech@aarogy
             db.commit()  # commit per case so visitors see cases appear one by one
             made += 1
             log.info("demo case %s %s ready", fn, ln)
+            _release_memory()
+            time.sleep(1)  # leave CPU for visitors' requests on the small instance
         return made
     except Exception:  # demo data must never take the API down
         log.exception("demo case seeding failed")

@@ -11,8 +11,18 @@ from .routers import admin, ai_modules, analytics, auth, patients, platform, pub
 settings = get_settings()
 
 
+def _limit_malloc_arenas():
+    """glibc gives every thread its own malloc arena, which multiplies memory on a 512 MB host. Cap it at 2."""
+    try:
+        import ctypes
+        ctypes.CDLL("libc.so.6").mallopt(-8, 2)  # M_ARENA_MAX
+    except Exception:
+        pass
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    _limit_malloc_arenas()
     init_db()
     from .services.demo_cases import start_in_background
     start_in_background()
